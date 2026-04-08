@@ -57,13 +57,13 @@ Architecture diversity is the single biggest lever; adding whisper and HuBERT mo
 # Hardware
 
 The solution were run on different workstations with the following specs with a range of the following specs:
-CPU: Ryzen 9 7950x, Threadripper pro 3945WX, Threadripper pro 5955WX, Threadripper pro 7965WX
-RAM: 96 - 128 GB DDR4/5
-GPU: Quadro RTX 6000 24gb, RTX A5000 24gb, RTX A6000 48gb
+- CPU: Ryzen 9 7950x, Threadripper pro 3945WX, Threadripper pro 5955WX, Threadripper pro 7965WX
+- RAM: 96 - 128 GB DDR4/5
+- GPU: Quadro RTX 6000 24gb, RTX A5000 24gb, RTX A6000 48gb
 
 A GPU with at least 24gb VRAM and at least 32gb RAM is needed for training.
 
-Training time ranged from 5 hours for the whisper-medium on the best GPU to 12 hours for the Wavlm-large on the worst GPU. 
+Training time ranged from 5 hours for the whisper-medium on the best GPU to 12 hours for the Wavlm-large on the worst GPU, provided the data is preprocessed to .npy files.
 
 Inference time: The ensemble of 13 models just fitted in the 2 hour inference time limit. Each model itself took around 9 minutes to make predictions on the test set. 
 
