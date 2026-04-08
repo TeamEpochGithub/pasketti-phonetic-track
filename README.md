@@ -154,7 +154,7 @@ The 'phoneme' we predicted worst was the length-mark (ː), and then the glottal-
 
 We did encounter some stability issues with the model collapsing to only predicting blanks at some point in the training loop and thus being stuck at a per of 1.0 for both train and val. We figured this was due to a slightly too high learning rate for the backbone:
 
-![alt text](image.png)
+![alt text](data/image.png)
 
 Exactly why this happens still isnt fully clear to us.
 ## Usage
