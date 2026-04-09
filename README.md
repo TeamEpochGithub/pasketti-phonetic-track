@@ -160,6 +160,16 @@ We did encounter some stability issues with the model collapsing to only predict
 Exactly why this happens still isnt fully clear to us.
 ## Usage
 
+### Preprocessing
+
+```bash
+# audio will be preprocessed to 16k and mono, and converted to .npy for quicker reading time
+uv run src/preprocessing/preprocess_audio.py
+
+# creating the noise samples (needed for some of the final configs)
+uv run src/preprocessing/create_noise_samples.py
+```
+
 ### Training
 
 ```bash
@@ -171,14 +181,6 @@ uv run src/run_pipeline.py --config-dir configs/final_submission --config-name w
 # Where the config name is one of hubertLarge, wavlmAlldata, wavlmLarge, whisperLarge, whisperMedium, alongside a number (1-4). 
 
 # You might need to pass logging.use_wandb=false if it doesnt work. 
-```
-
-### Preprocessing
-
-```bash
-# audio will be preprocessed to 16k and mono, and converted to .npy for quicker reading time
-uv run src/preprocessing/preprocess_audio.py
-
 ```
 
 ### MBR Decoding

@@ -1,5 +1,5 @@
 [project]
-name = "speech-phonetic-track"
+name = "pasketti-phonetic-track"
 version = "0.1.0"
 description = "Add your description here"
 readme = "README.md"
