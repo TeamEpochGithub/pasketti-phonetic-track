@@ -17,7 +17,7 @@ We train multiple CTC-based speech recognition models that predict IPA phoneme s
 | **Whisper-medium** | `openai/whisper-medium` | 2 | 0.253 — 0.255 |
 | **HuBERT-large** | `facebook/hubert-large-ll60k` | 2 | 0.247 — 0.248 |
 
-All models use a 2-layer CTC head on top of frozen-then-finetuned SSL/Whisper encoder features, with EMA weight averaging. Training uses SpecAugment, waveform augmentation (time stretch, pitch shift, band-stop filter), and duration-based batch sampling of 30 seconds. Preprocessing only consisted out of converting all audio samples to 16k and mono. The main hyperparameters were swept over with a wandb or smac3 sweep. Number of epoch ranged from 12-20 depending on overfit speed/risk.
+All models use a 2-layer CTC head on top of frozen-then-finetuned SSL/Whisper encoder features, with EMA weight averaging. Training uses SpecAugment, waveform augmentation (time stretch, pitch shift, band-stop filter), and duration-based batch sampling of 30 seconds. Preprocessing only consisted of converting all audio samples to 16kHz and mono. We swept over a selection of hyperparameters with a W&B- or SMAC3 sweep. The number of epochs ranged from 12-20 depending on overfit speed/risk.
 
 The CTC head architecture:
 ```
@@ -28,7 +28,7 @@ Linear(hidden_size, hidden_size)
 → Linear(hidden_size, vocab_size)    # 54 IPA tokens
 ```
 
-They were trained on a train/val split of 80/20, grouped on `child_id`. This correlated strongly with LB scores, with the R2-correlation being around 0.95 for all our submissions. A full 5-fold CV was not done due to excesive runtime. Finally, two of the WavLM-large models are trained on all available data (no validation holdout) for the final submission. 
+The models were trained on a train/val split of 80/20, grouped on `child_id`. This correlated strongly with LB scores, with the R2-correlation being around 0.95 for all our submissions. A full 5-fold CV was not done due to excessive runtime. Finally, two of the WavLM-large models are trained on all available data (no validation holdout) for the final submission. 
 
 ### 2. MBR Decoding (per model)
 
@@ -111,10 +111,10 @@ flowchart TD
 |---|---|---|---|
 | Wav2Vec2 base LoRA, greedy decoding | 0.3539 | 0.3703 | Initial CTC baseline |
 | + WavLM base LoRA + beam search | 0.3389 | 0.3658 | Beam width 15 + waveform augmentation |
-| + WavLM-large LoRA with LLA | 0.2800 | 0.3244 | Learned Layer Aggregation |
+| + WavLM-large LoRA with LLA | 0.2800 | 0.3244 | Increased model size + Learned Layer Aggregation |
 | + Full fine-tuning, greedy | 0.2610 | 0.3062 | WavLM-large, replacing LoRA |
-| + EMA, duration batching, diff. LR, tri-stage sched. | 0.2515 | 0.2918 | Training improvements + Whisper-large-v3 added |
-| + HuBERT-large | 0.2499 | 0.2871 | Added after SSL pretraining |
+| + EMA, duration batching, diff. LR, tri-stage sched. | 0.2515 | 0.2918 | Training improvements + Whisper-large-v3 instead |
+| + HuBERT-large | 0.2499 | 0.2871 | HuBERT after SSL pretraining |
 | + Logit-level ensemble | 0.2460 | 0.2851 | HuBERT + Whisper with temperature and blank penalty scaling |
 | + Focal CTC loss (WavLM-large) | 0.2466 | 0.2776 | Down-weights well-classified frames |
 | + Majority voting ensemble | 0.2353 | 0.2734 | Two best WavLM + best Whisper |
@@ -122,8 +122,8 @@ flowchart TD
 | + MBR-50 decoding (single model) | 0.2363 | | Beam search + MBR selection |
 | + 5-model greedy ROVER (WavLM only) | 0.2364 | | Char-level voting, but same-architecture = low diversity |
 | + 8-model greedy ROVER | 0.2298 | | Added whisper + HuBERT — diversity is key |
-| + 8-model MBR ROVER | 0.2284 | 0.2613 | MBR per model before ROVER |
-| + 9-model MBR ROVER | 0.2265 | | Added whisper-medium |
+| + 8-model MBR ROVER | 0.2284 | | MBR per model before ROVER |
+| + 9-model MBR ROVER | 0.2265 | 0.2613 | 4 WavLM + 3 whisp-L + 2 HuBERT |
 | + 13-model MBR ROVER | 0.2259 | | 6 WavLM + 3 whisp-L + 2 whisp-M + 2 HuBERT |
 | + whisper 1.5x vote if med pred ≤ 10 | 0.2258 | 0.2599 | Whisper models are specialists on short utterances |
 
@@ -135,28 +135,28 @@ flowchart TD
 | Fine-tuning decoder parameters | -0.0004 at best, overfit risk | Shallow optimum, tuned on val |
 | Post-processing rules (ː fixes, impossible bigrams) | Negligible | Too rare (~175 tokens in 30k utterances) |
 | Logit-level ensemble (averaging logits) | +0.1 PER (much worse) | Calibration mismatch across models |
-| TTA (speed perturbation) | Worse than ensembeling independent models | Shallow diversity vs real model diversity |
+| TTA (speed perturbation) | Worse than ensembling independent models | Shallow diversity vs real model diversity |
 | Weighted ROVER | +0.0002 at best | With balanced architecture representation, equal weights are near-optimal |
-| KenLM N-gram rescoring | -0.04 local, no difference LB | Likely overfitting on local data, due to corpus made on local corpus |
+| KenLM N-gram rescoring | -0.04 local, no difference LB | Likely overfitting on local data, as the language model was made on the local corpus |
 | LoRA fine-tuning | Full fine-tuning outperformed LoRA by ~0.02 PER | Not enough capacity to capture the acoustic variation in children's speech. LLA helped close the gap but not enough |
 | Learned Layer Aggregation (LLA) | Helped with LoRA, no benefit with full fine-tuning | LLA learns weighted combinations across encoder layers — useful when certain layers specialize in phonetics. With full fine-tuning, all layers adapt freely, making LLA redundant |
 
 ### Other things we tried
-We tried a lot of different things too, but did not have conclusive proof if they worked or not. Here is a list of these ideas:
+We tried a lot of different things too, but did not have conclusive proof of their effectiveness. Here is a list of these ideas:
 
 - **External datasets**: These included pretraining on non-banned external datasets, which failed due to lack of decent quality data. 
 
-- **SSL pretraining**: We tried to integrate the data from the word track into our pipeline in two different approaches. The first one was to try and use reconstruction-SSL on this to already pretune the wavlm's and hubert's to children speech. This seemed to not matter much, but needs more extensive testing. 
+- **SSL pretraining**: We tried to integrate the data from the word track into our pipeline in two different approaches. The first one was to try and use reconstruction-SSL on this to pre-tune the WavLM's and HuBERT's to children speech. This seemed to not matter much, but needs more extensive testing. 
 
 - **Multi Task Learning**: We also tried to use the word data with a MTL task; by creating a 2nd CTC head for the word labels, and using alternating batches to get an even split. While this seemed to have potential, we left it due to lack of time. 
 
-- **More robust preprocessing**: We looked at various preprocessing approaches, like denoising and audio segmentation, but no fast and reliable enough pipeline was found before the end of the comptition.  
+- **More robust preprocessing**: We looked at various preprocessing approaches, like denoising and audio segmentation, but no fast and reliable enough pipeline was found before the end of the competition.  
 
 
 ### Other quirks
-- We found that fp16 had significant better performance than bf16, up to a **performance boost of 0.03** running the same config on both fp16 and bf16. Due to us clipping the maximum gradient to under 10, we did not have any stability issues with an autocaster + fp16, so it turned to our default.
+- We found that fp16 had significantly better performance than bf16, up to a **performance boost of 0.03** running the same config on both fp16 and bf16. Due to us clipping the maximum gradient to under 10, we did not have any stability issues with an autocaster + fp16, so it turned to our default.
 
-- The 'phoneme' we predicted worst was the length-mark (ː), and then the glottal-stop (ʔ), with our models almost never predicting these. This would make sense as oppsed to other phonemes, these two dont make a unique and consistent noise. We tried various things in post-processing to reconstruct these, but no solution worked.
+- The 'phonemes' we predicted the worst were the length-mark (ː), and then the glottal-stop (ʔ), with our models almost never predicting them. This would make sense as opposed to other phonemes, these two do not make a unique and consistent noise. We tried various things in post-processing to reconstruct these, but no solution worked.
 
 - We did encounter some stability issues with the model collapsing to only predicting blanks at some point in the training loop and thus being stuck at a per of 1.0 for both train and val. We figured this was due to a slightly too high learning rate for the backbone:
 
@@ -212,9 +212,9 @@ We tried a lot of different things too, but did not have conclusive proof if the
 
 ## Setup
 
-1. Install the prerequisities
+1. Install the prerequisites
      - Python version 3.11
-     - UV astral
+     - Astrals's uv
 
 2. Install the required python packages in the pyproject.toml file using uv sync.
 
@@ -222,7 +222,7 @@ We tried a lot of different things too, but did not have conclusive proof if the
 
 ## Hardware
 
-The solution were run on different workstations with the following specs with a range of the following specs:
+The solution was run on different workstations with a range of the following specs:
 - CPU: Ryzen 9 7950x, Threadripper pro 3945WX, Threadripper pro 5955WX, Threadripper pro 7965WX
 - RAM: 96 - 128 GB DDR4/5
 - GPU: Quadro RTX 6000 24gb, RTX A5000 24gb, RTX A6000 48gb
@@ -231,7 +231,7 @@ A GPU with at least 24gb VRAM and at least 32gb RAM is needed for training.
 
 Training time ranged from 5 hours for the whisper-medium on the best GPU to 12 hours for the Wavlm-large on the worst GPU, provided the data is preprocessed to .npy files.
 
-Inference time: The ensemble of 13 models just fitted in the 2 hour inference time limit. Each model itself took around 9 minutes to make predictions on the test set. 
+Inference time: The ensemble of 13 models just fit within 2 hour inference time limit. Each model itself took around 9 minutes to make predictions on the test set. 
 
 ## Project Structure
 
@@ -329,7 +329,7 @@ uv run run_inference.py
 uv run src/inference/download_wheels.py
 
 
-# Then the submission zip is made, where the model weights, code and packages are automically packed
+# Then the submission zip is made, where the model weights, code and packages are automatically packed
 bash pack_submission.sh
 ```
 
