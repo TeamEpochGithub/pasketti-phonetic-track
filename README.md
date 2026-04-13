@@ -134,7 +134,6 @@ speech_phonetic_track/
 | TTA (speed perturbation) | Worse than ensembeling independent models | Shallow diversity vs real model diversity |
 | Weighted ROVER | +0.0002 at best | With balanced architecture representation, equal weights are near-optimal |
 | KenLM | -0.04 local, no difference LB | Likely overfitting on local data, due to corpus made on local data |
-| LoRA + LLA | +0.02 at best | Training the whole model was significantly better than just LoRA, and even adding a linear layer aggregator didnt help enough |
 
 ### Other things we tried
 We tried a lot of different things too, but did not have conclusive proof if they worked or not. Here is a list of these ideas:
