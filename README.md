@@ -152,6 +152,9 @@ We tried a lot of different things too, but did not have conclusive proof of the
 
 - **More robust preprocessing**: We looked at various preprocessing approaches, like denoising and audio segmentation, but no fast and reliable enough pipeline was found before the end of the competition.  
 
+- **LCS-CTC**: It was too hard to get a proper cost-matrix on this noisy dataset that alligns the labels with the output of allignment models. 
+
+
 
 ### Other quirks
 - We found that fp16 had significantly better performance than bf16, up to a **performance boost of 0.03** running the same config on both fp16 and bf16. Due to us clipping the maximum gradient to under 10, we did not have any stability issues with an autocaster + fp16, so it turned to our default.
@@ -216,9 +219,11 @@ We tried a lot of different things too, but did not have conclusive proof of the
      - Python version 3.11
      - Astrals's uv
 
-2. Install the required python packages in the pyproject.toml file using uv sync.
+2. Install the required python packages in the pyproject.toml file using ``uv sync``.
 
 3. Put all the drivendata + talkbank under the data/audio folder, and the jsonl files under the data/, named ``train_phon_transcripts.jsonl`` and ``train_phon_transcripts_talkback.jsonl`` respectively.
+
+4. If you want to do inference on new data, you would need to put the audio files under the data/audio folder, have the metadata be in a file named ``utterence_metadata.jsonl``, and also have a ``submission_format.json`` file similar to that provided by the competition. 
 
 ## Hardware
 
@@ -231,7 +236,7 @@ A GPU with at least 24gb VRAM and at least 32gb RAM is needed for training.
 
 Training time ranged from 5 hours for the whisper-medium on the best GPU to 12 hours for the Wavlm-large on the worst GPU, provided the data is preprocessed to .npy files.
 
-Inference time: The ensemble of 13 models just fit within 2 hour inference time limit. Each model itself took around 9 minutes to make predictions on the test set. 
+Inference time: The ensemble of 13 models just fit within 2 hour inference time limit. Each model itself took around 9 minutes to make predictions on the test set. This could have been furter optimized by running the preprocessing on the test-set, but was not done. 
 
 ## Project Structure
 
@@ -299,7 +304,7 @@ uv run src/run_pipeline.py --config-dir configs/final_submission --config-name w
 # You might need to pass logging.use_wandb=false if it doesnt work. 
 ```
 
-### MBR Decoding
+### MBR Decoding (local testing)
 
 ```bash
 # Decode all configured runs
@@ -309,7 +314,7 @@ uv run src/mbr_eval.py
 uv run src/mbr_eval.py 252 367
 ```
 
-### ROVER Ensemble Evaluation
+### ROVER Ensemble Evaluation (local testing)
 
 ```bash
 # Edit RUN_PARQUETS in rover.py, then:
@@ -320,6 +325,10 @@ uv run src/optimize_decoder/rover.py
 ```bash
 # Change all the model paths in the output_paths variable you want to use
 uv run run_inference.py
+
+# If it fails due to missing local weights, run the bash pack_submission.sh first, and then rerun it. 
+
+# This pipeline can also be used to make predictions on new files, provided the utterence metadata and submission format jsonl's exist. 
 ```
 
 ### Competition Submission
