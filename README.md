@@ -10,7 +10,7 @@ Transcribing verbatim children's speech cannot rely heavily on language models �
 
 We train multiple CTC-based speech recognition models that predict IPA phoneme sequences from audio:
 
-| Architecture | Backbone | # Models | Individual MBR-50 PER |
+| Architecture | Backbone | # Models | Individual MBR-50 PER (Local)|
 |---|---|---|---|
 | **WavLM-large** | `microsoft/wavlm-large` | 6 | 0.236 — 0.239 |
 | **Whisper-large** | `openai/whisper-large-v3` | 3 | 0.246 — 0.247 |
